@@ -97,3 +97,14 @@ class Report(db.Model):
     created_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # Use DateTime for timestamps
 
     user = db.relationship("User", backref="reports")
+
+#Habit tracking. 
+# I was not seeing how I could have a functional app without this table
+class HabitCompletion(db.Model):
+    __tablename__ = 'habitcompletion_table'
+    uid = db.Column(db.Integer, primary_key=True)
+    userhabit_id = db.Column(db.Integer, db.ForeignKey('userhabit_table.uid'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    completed = db.Column(db.Boolean, nullable=False)
+
+    userhabit = db.relationship("UserHabit", backref="habit_completions")

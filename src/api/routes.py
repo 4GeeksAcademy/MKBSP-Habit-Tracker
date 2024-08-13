@@ -6,6 +6,8 @@ from api.models import db, User, Habit, Friend, Report, LevelAccess, HabitHistor
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from datetime import datetime 
+from flask_jwt_extended import create_access_token
+
 
 
 api = Blueprint('api', __name__)
@@ -104,10 +106,33 @@ def update_user(user_id):
     if 'password' in data:
         user.set_password(data['password'])  # Set the new password
     
-    # Commit the changes to the database
     db.session.commit()
     
     return jsonify({"message": "User updated successfully"}), 200
+
+@api.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+
+    # Validate the email and password
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({"message": "Email and password are required"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user or not user.check_password(password):
+        return jsonify({"message": "Invalid email or password"}), 401
+
+    # Generate a JWT token
+    access_token = create_access_token(identity=str(user.id))
+
+    return jsonify({
+        "access_token": access_token,
+        "user": user.serialize()
+    }), 200
+
 
 # Route to deactivate (soft delete) a user
 @api.route('/deleteUser/<uuid:user_id>', methods=['DELETE'])
@@ -237,3 +262,87 @@ def get_habit(habit_id):
         "category": habit.category,
         "description": habit.description
     }), 200
+
+# Route to remove a habit assigned to a user
+@api.route('/removeHabit', methods=['DELETE'])
+def remove_habit():
+    data = request.get_json()
+    
+    # Validate the data
+    if 'user_habit_id' not in data:
+        raise APIException("Missing user habit ID", status_code=400)
+    
+    # Find the UserHabit entry
+    user_habit = UserHabit.query.get(data['user_habit_id'])
+    if not user_habit:
+        raise APIException("Habit assignment not found", status_code=404)
+    
+    # Delete the habit assignment
+    db.session.delete(user_habit)
+    db.session.commit()
+    
+    return jsonify({"message": "Habit assignment removed successfully"}), 200
+
+# Route to make a habit complete, and modify the Habit_Completion Table
+@api.route('/completeHabit', methods=['POST'])
+def complete_habit():
+    data = request.get_json()
+
+    # Validate the data
+    if 'user_habit_id' not in data or 'date' not in data or 'completed' not in data:
+        raise APIException("Missing data", status_code=400)
+    
+    # Parse the date from the data
+    completion_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+
+    # Find the user habit
+    user_habit = UserHabit.query.get(data['user_habit_id'])
+    if not user_habit:
+        raise APIException("User habit not found", status_code=404)
+
+    # Check if the completion record exists for the given date
+    habit_completion = HabitCompletion.query.filter_by(userhabit_id=user_habit.uid, date=completion_date).first()
+    
+    if habit_completion:
+        # Update the existing record
+        habit_completion.completed = data['completed']
+    else:
+        # Create a new record
+        habit_completion = HabitCompletion(
+            userhabit_id=user_habit.uid,
+            date=completion_date,
+            completed=data['completed']
+        )
+        db.session.add(habit_completion)
+
+    db.session.commit()
+
+    return jsonify({"message": "Habit completion status updated successfully"}), 200
+
+# Route for getting the habit performance, the Habit Completino info. 
+@api.route('/getHabitPerformance/<int:user_habit_id>', methods=['GET'])
+def get_habit_performance(user_habit_id):
+    # Find the user habit
+    user_habit = UserHabit.query.get(user_habit_id)
+    if not user_habit:
+        raise APIException("User habit not found", status_code=404)
+
+    # Get all completion records for this habit
+    completions = HabitCompletion.query.filter_by(userhabit_id=user_habit_id).order_by(HabitCompletion.date).all()
+
+    # Calculate the current streak and serialize the completions
+    streak = 0
+    serialized_completions = []
+    for completion in completions:
+        if completion.completed:
+            streak += 1
+        else:
+            streak = 0  # Reset streak if there's a day missed
+        
+        serialized_completions.append({
+            "date": completion.date.strftime('%Y-%m-%d'),
+            "completed": completion.completed,
+            "current_streak": streak
+        })
+
+    return jsonify({"performance": serialized_completions, "current_streak": streak}), 200
