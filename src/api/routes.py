@@ -162,11 +162,6 @@ def assign_habit():
     if not user:
         raise APIException("User not found", status_code=404)
     
-    # Check if the habit is already assigned to the user in the same level
-    existing_user_habit = UserHabit.query.filter_by(user_id=user.id, habit_id=habit.uid, level=data['level']).first()
-    if existing_user_habit:
-        raise APIException("This habit is already assigned to the user in this level", status_code=400)
-    
     # Ensure the habit exists
     habit = Habit.query.get(data['habit_id'])
     if not habit:
@@ -176,6 +171,11 @@ def assign_habit():
     user_habits_in_level = UserHabit.query.filter_by(user_id=user.id, level=data['level']).count()
     if user_habits_in_level >= 10:
         raise APIException(f"User already has 10 habits in level {data['level']}", status_code=400)
+    
+     # Check if the habit is already assigned to the user in the same level
+    existing_user_habit = UserHabit.query.filter_by(user_id=user.id, habit_id=habit.uid, level=data['level']).first()
+    if existing_user_habit:
+        raise APIException("This habit is already assigned to the user in this level", status_code=400)
     
     # Assign the habit to the user
     user_habit = UserHabit(
@@ -192,7 +192,7 @@ def assign_habit():
     db.session.add(user_habit)
     db.session.commit()
     
-    return jsonify({"message": "Habit assigned to user successfully", "user_habit_id": user_habit.uid}), 201
+    return jsonify({"message": "Habit assigned to user successfully", "user_habit_id": user_habit.uid, "to level":data['level']}), 201
 
 
 
