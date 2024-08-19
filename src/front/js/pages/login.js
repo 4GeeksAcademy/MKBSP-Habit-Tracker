@@ -12,31 +12,52 @@ import Grid from '@mui/material/Grid';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-
-function Copyright(props) {
-  return (
-    <Typography variant="body2" color="text.secondary" align="center" {...props}>
-      {'Copyright © '}
-      <Link color="inherit" href="https://mui.com/">
-        Your Website
-      </Link>{' '}
-      {new Date().getFullYear()}
-      {'.'}
-    </Typography>
-  );
-}
-
-// TODO remove, this demo shouldn't need to reset the theme.
+import { useNavigate } from 'react-router-dom';
 
 const defaultTheme = createTheme();
+
 const Login = () => {
-  const handleSubmit = (event) => {
+  const navigate = useNavigate();
+  const [error, setError] = React.useState(null);
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
+    const loginData = {
       email: data.get('email'),
       password: data.get('password'),
-    });
+    };
+
+    const apiUrl = 'https://effective-meme-g5455q947rf9jwr-3001.app.github.dev/api/login'; // Update to full URL
+    console.log('Logging in with URL:', apiUrl);
+    console.log('Logging in with data:', loginData);
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loginData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Save the JWT token in localStorage
+        localStorage.setItem('access_token', result.access_token);
+        console.log('Login successful! Token stored.');
+
+        // Redirect to the dashboard
+        navigate('/dashboard');
+      } else {
+        setError(result.message);
+        console.error('Login failed:', result.message);
+      }
+    } catch (error) {
+      setError('An unexpected error occurred. Please try again.');
+      console.error('Error:', error);
+    }
   };
 
   return (
@@ -49,8 +70,7 @@ const Login = () => {
           sm={4}
           md={7}
           sx={{
-            backgroundImage:
-              'url("/static/images/templates/templates-images/sign-in-side-bg.png")',
+            backgroundImage: 'url("/workspaces/MKBSP-Habit-Tracker/src/front/img/rigo-baby.jpg")',
             backgroundColor: (t) =>
               t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],
             backgroundSize: 'cover',
@@ -73,6 +93,11 @@ const Login = () => {
             <Typography component="h1" variant="h5">
               Sign in
             </Typography>
+            {error && (
+              <Typography variant="body2" color="error">
+                {error}
+              </Typography>
+            )}
             <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 1 }}>
               <TextField
                 margin="normal"
@@ -108,17 +133,16 @@ const Login = () => {
               </Button>
               <Grid container>
                 <Grid item xs>
-                  <Link href="#" variant="body2">
+                  <Link href="/forgotpassword" variant="body2">
                     Forgot password?
                   </Link>
                 </Grid>
                 <Grid item>
-                  <Link href="#" variant="body2">
+                  <Link href="/register" variant="body2">
                     {"Don't have an account? Sign Up"}
                   </Link>
                 </Grid>
               </Grid>
-              <Copyright sx={{ mt: 5 }} />
             </Box>
           </Box>
         </Grid>

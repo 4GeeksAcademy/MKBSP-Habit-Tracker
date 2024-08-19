@@ -15,7 +15,7 @@ class User(db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     email = db.Column(db.String(128), unique=True, nullable=False)
     username = db.Column(db.String(128), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
+    password_hash = db.Column(db.String(500), nullable=False)
     is_active = db.Column(db.Boolean, nullable=False)
     role = db.Column(db.String(128), nullable=False)  # admin, normal user
     invitation_code = db.Column(db.String(20), unique=True, nullable=True)  # Use snake_case for consistency

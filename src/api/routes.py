@@ -110,6 +110,7 @@ def update_user(user_id):
     
     return jsonify({"message": "User updated successfully"}), 200
 
+#Login Route
 @api.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -346,3 +347,25 @@ def get_habit_performance(user_habit_id):
         })
 
     return jsonify({"performance": serialized_completions, "current_streak": streak}), 200
+
+# Route to fetch all habits
+@api.route('/getAllHabits', methods=['GET'])
+def get_all_habits():
+    habits = Habit.query.all()
+    serialized_habits = [
+        {
+            "uid": habit.uid,
+            "title": habit.title,
+            "category": habit.category,
+            "description": habit.description
+        } for habit in habits
+    ]
+    return jsonify({"habits": serialized_habits}), 200
+
+
+# trying to fix caching
+@api.after_request
+def add_header(response):
+    response.cache_control.no_store = True
+    return response
+
