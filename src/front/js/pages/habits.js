@@ -1,7 +1,9 @@
 import React from 'react';
 import { Container, Box, Button, Dialog, DialogTitle, DialogContent, TextField } from '@mui/material';
 import { DragDropContext } from 'react-beautiful-dnd';
-import useHabits from './components/useHabitsHooks';
+import useHabits from '../component/useHabitsHooks';
+import HabitLevel from '../component/habitLevel';
+
 
 const Habits = () => {
     const {
