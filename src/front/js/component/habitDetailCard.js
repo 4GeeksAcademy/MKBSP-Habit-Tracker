@@ -1,3 +1,7 @@
+import React from 'react';
+import { Dialog, DialogTitle, DialogContent, Button, Box } from '@mui/material'; // Import necessary MUI components
+
+
 const HabitDetailModal = ({ selectedHabit, handleCloseHabitDetail, handleAddHabit, currentLevel }) => (
     <Dialog open={!!selectedHabit} onClose={handleCloseHabitDetail}>
         <DialogTitle>{selectedHabit?.title}</DialogTitle>
@@ -7,3 +11,5 @@ const HabitDetailModal = ({ selectedHabit, handleCloseHabitDetail, handleAddHabi
         </DialogContent>
     </Dialog>
 );
+
+export default HabitDetailModal;

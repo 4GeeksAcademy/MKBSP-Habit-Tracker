@@ -1,5 +1,9 @@
-const HabitCard = ({ habit, index, levelKey, handleDeleteHabit }) => (
-    <Draggable key={habit.habit_id} draggableId={String(habit.habit_id)} index={idx}>
+import React from 'react';
+import { Box, Button } from '@mui/material';
+import { Draggable } from 'react-beautiful-dnd';
+
+const HabitCard = ({ habit, index, handleDeleteHabit }) => (
+    <Draggable key={habit.habit_id} draggableId={String(habit.habit_id)} index={index}>
         {(provided) => (
             <Box
                 ref={provided.innerRef}
@@ -12,9 +16,11 @@ const HabitCard = ({ habit, index, levelKey, handleDeleteHabit }) => (
             >
                 {habit.title}
                 <Button variant="contained" color="secondary" onClick={() => handleDeleteHabit(habit.habit_id, index + 1)}>
-                    Delete
+                    Remove
                 </Button>
             </Box>
         )}
     </Draggable>
-)
+);
+
+export default HabitCard;

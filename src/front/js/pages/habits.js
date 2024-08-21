@@ -1,8 +1,11 @@
-import React from 'react';
-import { Container, Box, Button, Dialog, DialogTitle, DialogContent, TextField } from '@mui/material';
+
+import React, { useEffect, useState } from 'react'; 
+import { Container, Box, Button } from '@mui/material';
 import { DragDropContext } from 'react-beautiful-dnd';
 import useHabits from '../component/useHabitsHooks';
 import HabitLevel from '../component/habitLevel';
+import HabitDetailModal from '../component/habitDetailCard';
+import AddHabitModal from '../component/addHabitModal';
 
 
 const Habits = () => {
@@ -11,6 +14,7 @@ const Habits = () => {
         isModalOpen,
         availableHabits,
         selectedHabit,
+        currentLevel,
         handleOpenModal,
         handleCloseModal,
         handleAddHabit,
@@ -21,6 +25,33 @@ const Habits = () => {
         handleOpenHabitDetail,
         handleCloseHabitDetail,
     } = useHabits();
+
+    const [initialHabits, setInitialHabits] = useState(habits);
+
+    // Set initial habits state when component mounts
+    useEffect(() => {
+        setInitialHabits(habits);
+    }, []);
+
+    const hasUnsavedChanges = JSON.stringify(initialHabits) !== JSON.stringify(habits);
+
+    // useEffect to handle beforeunload event
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = ''; // This triggers the confirmation dialog
+            }
+        };
+
+        // Add event listener for beforeunload
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        // Cleanup event listener on component unmount
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [hasUnsavedChanges]);
 
     return (
         <Container>
@@ -39,11 +70,21 @@ const Habits = () => {
             </DragDropContext>
             <Button onClick={handleSaveChanges}>SAVE CHANGES</Button>
 
-            {/* AddHabitModal Component */}
-            {/* Insert your AddHabitModal component here */}
+            <AddHabitModal
+                isModalOpen={isModalOpen}
+                handleCloseModal={handleCloseModal}
+                handleSearch={handleSearch}
+                availableHabits={availableHabits}
+                handleAddHabit={handleAddHabit}
+                handleOpenHabitDetail={handleOpenHabitDetail}
+            />
 
-            {/* HabitDetailModal Component */}
-            {/* Insert your HabitDetailModal component here */}
+            <HabitDetailModal
+                selectedHabit={selectedHabit}
+                handleCloseHabitDetail={handleCloseHabitDetail}
+                handleAddHabit={handleAddHabit}
+                currentLevel={currentLevel}
+            />
         </Container>
     );
 };

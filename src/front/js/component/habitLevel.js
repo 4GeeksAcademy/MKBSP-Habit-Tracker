@@ -27,7 +27,11 @@ const HabitLevel = ({ habits, levelIndex, handleDeleteHabit, handleOpenModal }) 
                                     borderRadius={1}
                                 >
                                     {habit.title}
-                                    <Button variant="contained" color="secondary" onClick={() => handleDeleteHabit(habit.habit_id, levelIndex)}>
+                                    <Button
+                                        variant="contained"
+                                        color="secondary"
+                                        onClick={() => handleDeleteHabit(habit.habit_id, levelIndex)}
+                                    >
                                         Delete
                                     </Button>
                                 </Box>

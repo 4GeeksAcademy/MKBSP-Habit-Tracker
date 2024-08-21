@@ -7,6 +7,8 @@ const useHabits = () => {
     const [availableHabits, setAvailableHabits] = useState([]);
     const [currentLevel, setCurrentLevel] = useState(null);
     const [selectedHabit, setSelectedHabit] = useState(null);
+    
+
 
     useEffect(() => {
         const token = localStorage.getItem('access_token');
@@ -53,45 +55,53 @@ const useHabits = () => {
         console.log('Habit being added:', habit);
 
         setHabits(prevState => {
-            const updatedLevel = [...prevState[`level${currentLevel}`], habit];
+            const updatedLevel = [...prevState[`level${currentLevel}`], { ...habit, habit_id: habit.uid }];
             return { ...prevState, [`level${currentLevel}`]: updatedLevel };
         });
+
         setModalOpen(false);
     };
 
     const handleDragEnd = (result) => {
         const { destination, source } = result;
-
-        if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
-            return;
-        }
-
+    
+        // If dropped outside the list
+        if (!destination) return;
+    
+        // If dropped in the same place
+        if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+    
         const startLevel = habits[source.droppableId];
         const finishLevel = habits[destination.droppableId];
-
-        let movedHabit;
-
+    
+        let newHabits;
+    
         if (startLevel === finishLevel) {
-            const newHabitOrder = Array.from(startLevel);
-            movedHabit = newHabitOrder.splice(source.index, 1)[0];
-            newHabitOrder.splice(destination.index, 0, movedHabit);
-
-            setHabits(prevState => ({ ...prevState, [source.droppableId]: newHabitOrder }));
-        } else {
-            const startHabitOrder = Array.from(startLevel);
-            movedHabit = startHabitOrder.splice(source.index, 1)[0];
-            const finishHabitOrder = Array.from(finishLevel);
-            finishHabitOrder.splice(destination.index, 0, movedHabit);
-
+            // Reorder within the same level
+            newHabits = Array.from(startLevel);
+            const [movedHabit] = newHabits.splice(source.index, 1);
+            newHabits.splice(destination.index, 0, movedHabit);
+    
             setHabits(prevState => ({
                 ...prevState,
-                [source.droppableId]: startHabitOrder,
-                [destination.droppableId]: finishHabitOrder,
+                [source.droppableId]: newHabits,
+            }));
+        } else {
+            // Move between levels
+            const startHabits = Array.from(startLevel);
+            const finishHabits = Array.from(finishLevel);
+    
+            const [movedHabit] = startHabits.splice(source.index, 1);
+            finishHabits.splice(destination.index, 0, movedHabit);
+    
+            setHabits(prevState => ({
+                ...prevState,
+                [source.droppableId]: startHabits,
+                [destination.droppableId]: finishHabits,
             }));
         }
-
-        console.log("Updated habits state:", habits);
     };
+    
 
     const handleSaveChanges = async () => {
         const token = localStorage.getItem('access_token');
@@ -158,6 +168,7 @@ const useHabits = () => {
         handleDeleteHabit,
         handleOpenHabitDetail,
         handleCloseHabitDetail,
+        currentLevel, 
     };
 };
 
