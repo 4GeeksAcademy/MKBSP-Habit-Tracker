@@ -21,71 +21,27 @@ const Dashboard = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetchDashboardData(selectedDate);
-    }, [selectedDate]);
-
-    const fetchDashboardData = async (date) => {
-        try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch(`/api/getDashboardData?date=${date.toISOString()}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const result = await response.json();
-            if (response.ok) {
-                setUser(result.user);
-                setHabits(result.habits);
-                setHistoricData(result.historicData);
-                setDailyScore(result.dailyScore);
-                setComparisonScore(result.comparisonScore);
-            } else {
-                setError('Failed to fetch dashboard data: ' + result.message);
+        const fetchHabits = async () => {
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch(`/api/getUserHabits/${userId}/${level}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    setHabits(result.user_habits);
+                } else {
+                    console.error('Failed to fetch habits:', result.message);
+                }
+            } catch (error) {
+                console.error('Error fetching habits:', error);
             }
-        } catch (error) {
-            setError('Error fetching dashboard data: ' + error.message);
-        }
-    };
+        };
 
-    const handleHabitClick = (habit) => {
-        setSelectedHabit(habit);
-    };
-
-    const handleHabitCheck = async (habitId, completed) => {
-        try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('/api/checkHabit', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ habitId, completed, date: selectedDate.toISOString() }),
-            });
-            if (response.ok) {
-                fetchDashboardData(selectedDate);
-            } else {
-                setError('Failed to update habit: ' + await response.text());
-            }
-        } catch (error) {
-            setError('Error updating habit: ' + error.message);
-        }
-    };
-
-    const handleLevelUp = async () => {
-        try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('/api/levelUp', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
-            if (response.ok) {
-                fetchDashboardData(selectedDate);
-            } else {
-                setError('Failed to level up: ' + await response.text());
-            }
-        } catch (error) {
-            setError('Error leveling up: ' + error.message);
-        }
-    };
+        fetchHabits();
+    }, [level]);
 
     return (
         <Grid container spacing={3} sx={{ padding: 3 }}>

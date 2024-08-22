@@ -15,9 +15,14 @@ const HabitCard = ({ habit, index, handleDeleteHabit }) => (
                 borderRadius={1}
             >
                 {habit.title}
-                <Button variant="contained" color="secondary" onClick={() => handleDeleteHabit(habit.habit_id, index + 1)}>
-                    Remove
+                <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => handleDeleteHabit(userId, habit.habit_id, levelIndex)}
+                >
+                    Delete
                 </Button>
+
             </Box>
         )}
     </Draggable>

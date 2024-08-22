@@ -140,15 +140,43 @@ const useHabits = () => {
         setAvailableHabits(filteredHabits);
     };
 
-    const handleDeleteHabit = (habitId, level) => {
-        setHabits(prevState => {
-            const updatedHabits = {
-                ...prevState,
-                [`level${level}`]: prevState[`level${level}`].filter(habit => habit.habit_id !== habitId),
-            };
-            return updatedHabits;
-        });
+    const handleDeleteHabit = async (userId, habitId, level) => {
+        try {
+            console.log('Attempting to delete habit with ID:', habitId, 'for user:', userId);
+    
+            const token = localStorage.getItem('access_token');
+            console.log('Token:', token);
+    
+            const response = await fetch(`https://effective-meme-g5455q947rf9jwr-3001.app.github.dev/api/removeHabit/${userId}/${habitId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+    
+            console.log('Response status:', response.status);
+    
+            if (!response.ok) {
+                console.error('Failed to remove habit:', await response.text());
+            } else {
+                console.log('Habit assignment removed successfully.');
+    
+                // Update local state after successful deletion
+                setHabits(prevState => {
+                    const updatedHabits = {
+                        ...prevState,
+                        [`level${level}`]: prevState[`level${level}`].filter(habit => habit.habit_id !== habitId),
+                    };
+                    return updatedHabits;
+                });
+            }
+        } catch (error) {
+            console.error('Error removing habit:', error);
+        }
     };
+    
+
 
     const handleOpenHabitDetail = (habit) => setSelectedHabit(habit);
     const handleCloseHabitDetail = () => setSelectedHabit(null);

@@ -264,17 +264,31 @@ def get_habit(habit_id):
         "description": habit.description
     }), 200
 
-# Route to remove a habit assigned to a user
-@api.route('/removeHabit', methods=['DELETE'])
-def remove_habit():
-    data = request.get_json()
-    
-    # Validate the data
-    if 'user_habit_id' not in data:
-        raise APIException("Missing user habit ID", status_code=400)
-    
-    # Find the UserHabit entry
-    user_habit = UserHabit.query.get(data['user_habit_id'])
+# OLD or mistaken... Route to remove a habit assigned to a user
+#@api.route('/removeHabit', methods=['DELETE'])
+#def remove_habit():
+#    data = request.get_json()
+#    
+#    # Validate the data
+#    if 'user_habit_id' not in data:
+#        raise APIException("Missing user habit ID", status_code=400)
+#    
+#    # Find the UserHabit entry
+#    user_habit = UserHabit.query.get(data['user_habit_id'])
+#    if not user_habit:
+#        raise APIException("Habit assignment not found", status_code=404)
+#    
+#    # Delete the habit assignment
+#    db.session.delete(user_habit)
+#    db.session.commit()
+#    
+#    return jsonify({"message": "Habit assignment removed successfully"}), 200
+
+@api.route('/removeHabit/<uuid:user_id>/<int:user_habit_id>', methods=['DELETE'])
+def remove_habit(user_id, user_habit_id):
+    # Find the UserHabit entry based on user_id and user_habit_id
+    user_habit = UserHabit.query.filter_by(user_id=user_id, uid=user_habit_id).first()
+
     if not user_habit:
         raise APIException("Habit assignment not found", status_code=404)
     
@@ -283,6 +297,7 @@ def remove_habit():
     db.session.commit()
     
     return jsonify({"message": "Habit assignment removed successfully"}), 200
+
 
 # Route to make a habit complete, and modify the Habit_Completion Table
 @api.route('/completeHabit', methods=['POST'])
@@ -361,6 +376,29 @@ def get_all_habits():
         } for habit in habits
     ]
     return jsonify({"habits": serialized_habits}), 200
+
+@api.route('/getAllUserHabits/<uuid:user_id>', methods=['GET'])
+def fetch_all_user_habits(user_id):
+    # Query the UserHabit table to get all habits for this user
+    user_habits = UserHabit.query.filter_by(user_id=user_id).all()
+
+    if not user_habits:
+        return jsonify({"message": "No habits found for this user"}), 404
+
+    # Serialize the results to return in a JSON format
+    habits_list = []
+    for habit in user_habits:
+        habits_list.append({
+            "user_habit_id": habit.uid,
+            "habit_id": habit.habit_id,
+            "level": habit.level,
+            "status": habit.status,
+            "progress_streak": habit.progress_streak
+        })
+
+    return jsonify(habits_list), 200
+
+
 
 
 # trying to fix caching
