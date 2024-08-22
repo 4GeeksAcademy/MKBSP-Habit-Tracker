@@ -176,6 +176,8 @@ const useHabits = () => {
         }
     };
     
+    
+    
 
 
     const handleOpenHabitDetail = (habit) => setSelectedHabit(habit);

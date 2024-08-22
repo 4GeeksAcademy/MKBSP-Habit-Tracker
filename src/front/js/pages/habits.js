@@ -6,6 +6,7 @@ import useHabits from '../component/useHabitsHooks';
 import HabitLevel from '../component/habitLevel';
 import HabitDetailModal from '../component/habitDetailCard';
 import AddHabitModal from '../component/addHabitModal';
+import { jwtDecode } from 'jwt-decode';
 
 
 const Habits = () => {
@@ -25,6 +26,11 @@ const Habits = () => {
         handleOpenHabitDetail,
         handleCloseHabitDetail,
     } = useHabits();
+
+    const token = localStorage.getItem('access_token');
+    const userId = jwtDecode(token).sub; // Get userId from the token
+    console.log('Extracted userId:', userId); // Log userId to check if it's correctly extracted
+
 
     const [initialHabits, setInitialHabits] = useState(habits);
 
@@ -62,9 +68,10 @@ const Habits = () => {
                             key={levelKey}
                             habits={habits[levelKey]}
                             levelIndex={index + 1}
-                            handleDeleteHabit={handleDeleteHabit}
+                            userId={userId}  
+                            handleDeleteHabit={(habitId, level) => handleDeleteHabit(userId, habitId, level)}
                             handleOpenModal={handleOpenModal}
-                        />
+                    />
                     ))}
                 </Box>
             </DragDropContext>

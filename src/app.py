@@ -15,6 +15,8 @@ from datetime import datetime
 from api.models import UserHabit, HabitCompletion
 
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
+
 
 
 
@@ -27,6 +29,7 @@ static_file_dir = os.path.join(os.path.dirname(
 
 app = Flask(__name__)
 
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.url_map.strict_slashes = False
 
 

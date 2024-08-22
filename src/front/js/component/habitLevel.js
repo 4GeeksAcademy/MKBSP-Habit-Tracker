@@ -2,7 +2,7 @@ import React from 'react';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
 import { Box, Button } from '@mui/material';
 
-const HabitLevel = ({ habits, levelIndex, handleDeleteHabit, handleOpenModal }) => {
+const HabitLevel = ({ habits, levelIndex, userId, handleDeleteHabit, handleOpenModal }) => {
     return (
         <Droppable droppableId={`level${levelIndex}`}>
             {(provided) => (
@@ -15,7 +15,7 @@ const HabitLevel = ({ habits, levelIndex, handleDeleteHabit, handleOpenModal }) 
                 >
                     <h3>{`Level ${levelIndex}`}</h3>
                     {habits.map((habit, idx) => (
-                        <Draggable key={habit.habit_id} draggableId={String(habit.habit_id)} index={idx}>
+                        <Draggable key={habit.user_habit_id} draggableId={String(habit.user_habit_id)} index={idx}>
                             {(provided) => (
                                 <Box
                                     ref={provided.innerRef}
@@ -30,10 +30,14 @@ const HabitLevel = ({ habits, levelIndex, handleDeleteHabit, handleOpenModal }) 
                                     <Button
                                         variant="contained"
                                         color="secondary"
-                                        onClick={() => handleDeleteHabit(habit.habit_id, levelIndex)}
+                                        onClick={() => {
+                                            console.log('Deleting habit with userId:', userId, 'and habitId:', habit.user_habit_id, 'at level:', levelIndex);
+                                            handleDeleteHabit(habit.user_habit_id, levelIndex);
+                                        }}
                                     >
                                         Delete
                                     </Button>
+
                                 </Box>
                             )}
                         </Draggable>

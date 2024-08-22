@@ -73,9 +73,10 @@
 		]
 	},
 	"dependencies": {
-		"@emotion/react": "^11.13.0",
+		"@emotion/react": "^11.13.3",
 		"@emotion/styled": "^11.13.0",
 		"@mui/icons-material": "^5.16.7",
+		"@mui/lab": "^5.0.0-alpha.173",
 		"@mui/material": "^5.16.7",
 		"jwt-decode": "^4.0.0",
 		"mdb-react-ui-kit": "^8.0.0",
@@ -84,6 +85,7 @@
 		"react-beautiful-dnd": "^13.1.1",
 		"react-dom": "^18.2.0",
 		"react-polyfills": "0.0.1",
-		"react-router-dom": "^6.3.0"
+		"react-router-dom": "^6.3.0",
+		"recharts": "^2.12.7"
 	}
 }
