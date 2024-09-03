@@ -431,7 +431,7 @@ def fetch_quote():
     try:
         response = requests.get(
             'https://api.api-ninjas.com/v1/quotes?category=learning',
-            headers={'X-Api-Key': '5vguYHsl+k/CxCzAcJWunA==S7uZ4bB5THh0L6yT'},
+            headers={'X-Api-Key': 'wULAN7kEXbiD1MssUfJGMES0UuRHA4gNMYU1SOTi'},
             timeout=10  
         )
         response.raise_for_status()  
