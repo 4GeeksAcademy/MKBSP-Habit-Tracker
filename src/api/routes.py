@@ -2,11 +2,12 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, User, Habit, Friend, Report, LevelAccess, HabitHistory, UserHabit
+from api.models import db, User, Habit, Friend, Report, LevelAccess, HabitHistory, UserHabit, HabitCompletion
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
-from datetime import datetime 
+from datetime import datetime, timedelta
 from flask_jwt_extended import create_access_token
+from functools import wraps
 
 
 
@@ -223,7 +224,7 @@ def assign_habit():
 
 
 # Route to get a user's habits by level
-@api.route('/getUserHabits/<uuid:user_id>/<int:level>', methods=['GET'])
+@api.route('/getUserHabits/<string:user_id>/<int:level>', methods=['GET'])
 def get_user_habits(user_id, level):
     # Ensure the user exists
     user = User.query.get(user_id)
@@ -241,12 +242,13 @@ def get_user_habits(user_id, level):
     for user_habit in user_habits:
         habit = Habit.query.get(user_habit.habit_id)
         serialized_habits.append({
+            "user_habit_id": user_habit.uid,  
             "habit_id": habit.uid,
             "title": habit.title,
             "category": habit.category,
             "description": habit.description,
             "progress_streak": user_habit.progress_streak,
-            "last_completed_date": user_habit.last_completed_date.strftime('%Y-%m-%d')
+            "last_completed_date": user_habit.last_completed_date.strftime('%Y-%m-%d') if user_habit.last_completed_date else None
         })
     
     return jsonify({"user_habits": serialized_habits}), 200
@@ -401,9 +403,58 @@ def fetch_all_user_habits(user_id):
 
 
 
-# trying to fix caching
+
+
+
+
+#I was supposed to have these 2 definitions 
+cached_quote = None
+last_fetch_date = None
+
+#and this is also right, for somer reason.... 
+def daily_cache(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        global cached_quote, last_fetch_date
+        today = datetime.now().date()
+        
+        if cached_quote is None or last_fetch_date != today:
+            cached_quote = func(*args, **kwargs)
+            last_fetch_date = today
+        
+        return cached_quote
+    return wrapper
+
+#this should be our daily fetching... Don't know if this is better in the dailyquote page
+@daily_cache
+def fetch_quote():
+    try:
+        response = requests.get(
+            'https://api.api-ninjas.com/v1/quotes?category=learning',
+            headers={'X-Api-Key': '5vguYHsl+k/CxCzAcJWunA==S7uZ4bB5THh0L6yT'},
+            timeout=10  
+        )
+        response.raise_for_status()  
+        data = response.json()[0]
+        return {
+            'text': data['quote'],
+            'author': data['author']
+        }
+    except requests.RequestException as e:
+        print(f"Error fetching quote: {e}")
+        return {
+            'text': 'Failed to fetch quote',
+            'author': 'Unknown'
+        }
+
+#getting our daily quotes from the API ninja https://api-ninjas.com/api/quotes
+@api.route('/api/daily-quote', methods=['GET'])
+def get_daily_quote():
+    quote = fetch_quote()
+    return jsonify(quote)
+
+#this is how I stop the caching
 @api.after_request
 def add_header(response):
     response.cache_control.no_store = True
     return response
-

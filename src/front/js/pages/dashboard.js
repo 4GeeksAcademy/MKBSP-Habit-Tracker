@@ -1,94 +1,115 @@
 import React, { useEffect, useState } from 'react';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import DatePicker from '@mui/lab/DatePicker';
-import Animation from '../component/animation';
-import Levels from '../component/levels';
-import Graph from '../component/dashboardGraph';
-import Streaks from '../component/streaks';
-import { useNavigate } from 'react-router-dom';
+import TextField from '@mui/material/TextField';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { jwtDecode } from 'jwt-decode';
+import Level from '../component/levels';
+import Quotes from '../component/dailyQuote'; 
 
 const Dashboard = () => {
-    const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [habits, setHabits] = useState([]);
-    const [historicData, setHistoricData] = useState([]);
-    const [dailyScore, setDailyScore] = useState(0);
-    const [comparisonScore, setComparisonScore] = useState(0);
-    const [selectedHabit, setSelectedHabit] = useState(null);
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const [error, setError] = useState(null);
+    const [level, setLevel] = useState(1);
 
     useEffect(() => {
-        const fetchHabits = async () => {
+        // Fetch user data
+        const fetchUserData = async () => {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                console.error('No access token found');
+                return;
+            }
+            const userId = jwtDecode(token).sub;
             try {
-                const token = localStorage.getItem('access_token');
-                const response = await fetch(`/api/getUserHabits/${userId}/${level}`, {
+                const response = await fetch(`https://effective-meme-g5455q947rf9jwr-3001.app.github.dev/api/getUser/${userId}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-                const result = await response.json();
                 if (response.ok) {
-                    setHabits(result.user_habits);
+                    const userData = await response.json();
+                    setUser(userData);
                 } else {
-                    console.error('Failed to fetch habits:', result.message);
+                    console.error('Failed to fetch user data');
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        };
+
+        fetchUserData();
+    }, []);
+
+    useEffect(() => {
+        // Fetch habits for the current level
+        const fetchHabits = async () => {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                console.error('No access token found');
+                return;
+            }
+            const userId = jwtDecode(token).sub;
+            try {
+                const response = await fetch(`https://effective-meme-g5455q947rf9jwr-3001.app.github.dev/api/getUserHabits/${userId}/${level}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) {
+                    const habitsData = await response.json();
+                    setHabits(habitsData.user_habits);
+                } else {
+                    console.error('Failed to fetch habits');
                 }
             } catch (error) {
                 console.error('Error fetching habits:', error);
             }
         };
 
-        fetchHabits();
-    }, [level]);
+        if (user) {
+            fetchHabits();
+        }
+    }, [user, level]);
+
+    const handleDateChange = (newDate) => {
+        setSelectedDate(newDate);
+    };
+
+    const handleLevelChange = (newLevel) => {
+        setLevel(newLevel);
+    };
 
     return (
-        <Grid container spacing={3} sx={{ padding: 3 }}>
-            {/* Top Section */}
-            <Grid item xs={12}>
-                <Typography variant="h4">Welcome, {user ? user.name : 'Stranger'}</Typography>
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <Grid container spacing={3} sx={{ padding: 3 }}>
+                <Grid item xs={12}>
+                    <Typography variant="h4">Welcome, {user ? user.username : 'User'}</Typography>
+                </Grid>
+                <Grid item xs={12}>
+                    <Quotes />  
+                </Grid>
+                <Grid item xs={12}>
+                    <DatePicker
+                        label="Select Date"
+                        value={selectedDate}
+                        onChange={handleDateChange}
+                        renderInput={(params) => <TextField {...params} />}
+                    />
+                </Grid>
+                <Grid item xs={12}>
+                    <Level
+                        level={level}
+                        habits={habits}
+                        selectedDate={selectedDate}
+                        onLevelChange={handleLevelChange}
+                    />
+                </Grid>
             </Grid>
-            <Grid item xs={6}>
-                <Typography variant="h6">Daily Score: {dailyScore}/10</Typography>
-            </Grid>
-            <Grid item xs={6}>
-                <Typography variant="h6">
-                    Compared to last 3 days: {comparisonScore > 0 ? '+' : ''}{comparisonScore}%
-                </Typography>
-            </Grid>
-
-            {/* Date Navigation */}
-            <Grid item xs={12}>
-                <DatePicker
-                    value={selectedDate}
-                    onChange={(newDate) => setSelectedDate(newDate)}
-                    renderInput={(params) => <TextField {...params} />}
-                />
-            </Grid>
-
-            {/* Middle Section */}
-            <Grid item xs={6}>
-                <Animation />
-            </Grid>
-            <Grid item xs={6}>
-                <Levels
-                    habits={habits}
-                    onHabitClick={handleHabitClick}
-                    onHabitCheck={handleHabitCheck}
-                    onLevelUp={handleLevelUp}
-                    isPremium={user?.isPremium}
-                />
-            </Grid>
-
-            {/* Bottom Section */}
-            <Grid item xs={12}>
-                <Graph data={historicData} />
-            </Grid>
-            <Grid item xs={12}>
-                {selectedHabit && <Streaks habit={selectedHabit} />}
-            </Grid>
-        </Grid>
+        </LocalizationProvider>
     );
 };
 
