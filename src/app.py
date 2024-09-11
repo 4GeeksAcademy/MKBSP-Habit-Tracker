@@ -19,8 +19,6 @@ from flask_cors import CORS
 
 
 
-
-
 # from models import Person
 
 ENV = "development" if os.getenv("FLASK_DEBUG") == "1" else "production"
@@ -29,7 +27,8 @@ static_file_dir = os.path.join(os.path.dirname(
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 app.url_map.strict_slashes = False
 
 
@@ -87,6 +86,11 @@ def serve_any_other_file(path):
     response.cache_control.max_age = 0  # avoid cache memory
     return response
 
+#resetting password
+@app.route('/reset_password/<token>')
+def reset_password_page(token):
+    return send_from_directory(static_file_dir, 'reset_password.html')
+
 # Function to reset habits daily
 def reset_habits():
     today = datetime.utcnow().date()
@@ -119,5 +123,3 @@ atexit.register(lambda: scheduler.shutdown())
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3001))
     app.run(host='0.0.0.0', port=PORT, debug=True)
-
-

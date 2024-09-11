@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import UUID
 
 
 
+
 db = SQLAlchemy()
 
 class User(db.Model):
@@ -19,6 +20,9 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, nullable=False)
     role = db.Column(db.String(128), nullable=False)  # admin, normal user
     invitation_code = db.Column(db.String(20), unique=True, nullable=True)  # Use snake_case for consistency
+    
+    password_reset_token = db.Column(db.String(36), nullable=True)
+    password_reset_expires = db.Column(db.DateTime, nullable=True)
 
     def __repr__(self):
         return f'<User {self.email}>'
@@ -64,7 +68,7 @@ class HabitHistory(db.Model):
     __tablename__ = 'habithistory_table'
     uid = db.Column(db.Integer, primary_key=True)
     userhabit_id = db.Column(db.Integer, db.ForeignKey('userhabit_table.uid'), nullable=False)
-    date = db.Column(db.Date, nullable=False)
+    date =db.Column(db.Date, nullable=False)
 
     userhabit = db.relationship("UserHabit", backref="habit_history")
 

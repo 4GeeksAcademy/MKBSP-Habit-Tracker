@@ -30,7 +30,7 @@ const Login = () => {
 
     const apiUrl = 'https://effective-meme-g5455q947rf9jwr-3001.app.github.dev/api/login'; // Update to full URL
     console.log('Logging in with URL:', apiUrl);
-    console.log('Logging in with data:', loginData);
+    console.log('Logging in with data:', loginData); //why do i keep having issues here? 
 
     try {
       const response = await fetch(apiUrl, {

@@ -8,12 +8,14 @@ import { Home } from "./pages/home";
 import Login from "./pages/login";
 import Register from "./pages/register";
 import Dashboard from "./pages/dashboard";
-import { Profile } from "./pages/profile";
+import ProfilePage from "./pages/profile";
 import Habits from "./pages/habits";
 import { Reports } from "./pages/reports";
 import { Quotes } from "./pages/quotes";
 import { Onboarding } from "./pages/onboarding";
-import { Forgotpassword } from "./pages/forgotpassword";
+import ForgotPassword from "./pages/forgotpassword"
+import ResetPassword from "./pages/resetPasswordToken";
+
 import injectContext from "./store/appContext";
 
 import Navbar from "./component/navbar";
@@ -40,12 +42,13 @@ const Layout = () => {
                             <Route element={<Login />} path="/login" />
                             <Route element={<Register />} path="/register" />
                             <Route element={<Onboarding />} path="/onboarding" />
-                            <Route element={<Profile />} path="/profile" />
+                            <Route element={<ProfilePage />} path="/profile" />
                             <Route element={<Habits />} path="/habits" />
                             <Route element={<Reports />} path="/reports" />
                             <Route element={<Dashboard />} path="/dashboard" />
                             <Route element={<Quotes />} path="/quotes" />
-                            <Route element={<Forgotpassword />} path="/forgotpassword" />
+                            <Route element={<ForgotPassword />} path="/forgotpassword" />
+                            <Route element={<ResetPassword />} path="/resetpasswordtoken" />
                             <Route element={<h1>Not found!</h1>} />
                         </Routes>
                     </div>

@@ -30,6 +30,7 @@ const Dashboard = () => {
                         'Authorization': `Bearer ${token}`
                     }
                 });
+                console.log({userId})
                 if (response.ok) {
                     const userData = await response.json();
                     setUser(userData);

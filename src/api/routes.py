@@ -8,6 +8,12 @@ from flask_cors import CORS
 from datetime import datetime, timedelta
 from flask_jwt_extended import create_access_token
 from functools import wraps
+import uuid
+import smtplib
+import requests
+from email.mime.text import MIMEText
+from api.utils import APIException
+
 
 
 
@@ -17,14 +23,14 @@ api = Blueprint('api', __name__)
 CORS(api)
 
 # Test
-@api.route('/hello', methods=['POST', 'GET'])
-def handle_hello():
-
-    response_body = {
-        "message": "Hello! I'm a message that came from the backend, check the network tab on the google inspector and you will see the GET request"
-    }
-
-    return jsonify(response_body), 200
+#@api.route('/hello', methods=['POST', 'GET'])
+#def handle_hello():
+#
+#    response_body = {
+#        "message": "Hello! I'm a message that came from the backend, check the network tab on the google inspector and you will see the GET request"
+#    }
+#
+#    return jsonify(response_body), 200
 
 #Create a new User
 @api.route('/createUser', methods=['POST'])
@@ -110,6 +116,24 @@ def update_user(user_id):
     db.session.commit()
     
     return jsonify({"message": "User updated successfully"}), 200
+
+def send_password_reset_email(email, reset_token):
+    frontend_url = "https://effective-meme-g5455q947rf9jwr-3000.app.github.dev"  # Update this with your actual frontend URL
+    reset_link = f"{frontend_url}/reset-password/{reset_token}"
+    
+    msg = MIMEText(f"Please click the following link to reset your password: {reset_link}")
+    msg['Subject'] = "Password Reset"
+    msg['From'] = "mailgun@sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org"
+    msg['To'] = email
+
+    try:
+        with smtplib.SMTP('smtp.mailgun.org', 587) as s:
+            s.starttls()
+            s.login('postmaster@sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org', '***REMOVED***')
+            s.send_message(msg)
+        print(f"Password reset email sent to {email}")
+    except Exception as e:
+        print(f"Failed to send password reset email: {str(e)}")
 
 #Login Route
 @api.route('/login', methods=['POST'])
@@ -458,3 +482,141 @@ def get_daily_quote():
 def add_header(response):
     response.cache_control.no_store = True
     return response
+
+
+#@api.route('/reset_password', methods=['POST'])
+#def reset_password():
+#    email = request.json.get('email', None)
+#    if not email:
+#        return jsonify({"msg": "Email is required"}), 400
+#
+#    user = User.query.filter_by(email=email).first()
+#    if not user:
+#        return jsonify({"msg": "No user found with that email"}), 404
+#
+#    # Generate a unique password reset token
+#    reset_token = str(uuid.uuid4())
+#
+#    # Save the reset token and expiration time in the user model
+#    user.password_reset_token = reset_token
+#    user.password_reset_expires = datetime.utcnow() + timedelta(minutes=15)
+#    db.session.commit()
+#
+#    # Send a password reset email to the user
+#    send_password_reset_email(user.email, reset_token)
+#
+#    return jsonify({"msg": "Password reset instructions have been sent to your email"}), 200
+
+#@api.route('/reset_password/<token>', methods=['POST'])
+#def update_password(token):
+#    new_password = request.json.get('new_password', None)
+#    if not new_password:
+#        return jsonify({"msg": "New password is required"}), 400
+#
+#    user = User.query.filter_by(password_reset_token=token).first()
+#    if not user or user.password_reset_expires < datetime.utcnow():
+#        return jsonify({"msg": "Invalid or expired password reset token"}), 400
+#
+#    user.set_password(new_password)
+#    user.password_reset_token = None
+#    user.password_reset_expires = None
+#    db.session.commit()
+#
+#    return jsonify({"msg": "Password updated successfully"}), 200
+
+#def send_password_reset_email(email, reset_token):
+#    mailgun_client = MailgunClient(api_key='***REMOVED***', domain='sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org')
+#
+#    message = MIMEText(f"Please click the following link to reset your password: https://effective-meme-g5455q947rf9jwr-3000.app.github.dev/reset_password/{reset_token}")
+#    message['Subject'] = "Password Reset"
+#    message['From'] = "no-reply@sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org"
+#    message['To'] = email
+#
+#    mailgun_client.send_email(
+#        sender="no-reply@sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org",
+#        recipient=email,
+#        subject="Password Reset",
+#        text=message.as_string()
+#    )
+
+
+@api.route('/request_password_reset', methods=['POST'])
+def request_password_reset():
+    email = request.json.get('email', None)
+    if not email:
+        return jsonify({"msg": "Email is required"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"msg": "If a user with this email exists, a reset link has been sent."}), 200
+
+    # Generate a unique password reset token
+    reset_token = str(uuid.uuid4())
+
+    # Save the reset token and expiration time in the user model
+    user.password_reset_token = reset_token
+    user.password_reset_expires = datetime.utcnow() + timedelta(minutes=15)
+    db.session.commit()
+
+    # Send a password reset email to the user
+    send_password_reset_email(user.email, reset_token)
+
+    return jsonify({"msg": "If a user with this email exists, a reset link has been sent."}), 200
+
+
+
+@api.route('/reset_password', methods=['POST'])
+def reset_password():
+    email = request.json.get('email', None)
+    if not email:
+        return jsonify({"msg": "Email is required"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"msg": "No user found with that email"}), 404
+
+    # Generate a unique password reset token
+    reset_token = str(uuid.uuid4())
+
+    # Save the reset token and expiration time in the user model
+    user.password_reset_token = reset_token
+    user.password_reset_expires = datetime.utcnow() + timedelta(minutes=15)
+    db.session.commit()
+
+    # Send a password reset email to the user
+    send_password_reset_email(user.email, reset_token)
+
+    return jsonify({"msg": "Password reset instructions have been sent to your email"}), 200
+
+@api.route('/reset_password/<token>', methods=['POST'])
+def confirm_password_reset(token):
+    new_password = request.json.get('new_password', None)
+    if not new_password:
+        return jsonify({"msg": "New password is required"}), 400
+
+    user = User.query.filter_by(password_reset_token=token).first()
+    if not user or user.password_reset_expires < datetime.utcnow():
+        return jsonify({"msg": "Invalid or expired password reset token"}), 400
+
+    user.set_password(new_password)
+    user.password_reset_token = None
+    user.password_reset_expires = None
+    db.session.commit()
+
+    return jsonify({"msg": "Password updated successfully"}), 200
+
+
+def send_password_reset_email(email, reset_token):
+    msg = MIMEText(f"Please click the following link to reset your password: https://effective-meme-g5455q947rf9jwr-3000.app.github.dev/reset_password/{reset_token}")
+    msg['Subject'] = "Password Reset"
+    msg['From'] = "mailgun@sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org"
+    msg['To'] = email
+
+    try:
+        with smtplib.SMTP('smtp.mailgun.org', 587) as s:
+            s.starttls()
+            s.login('postmaster@sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org', '***REMOVED***')
+            s.send_message(msg)
+        print(f"Password reset email sent to {email}")
+    except Exception as e:
+        print(f"Failed to send password reset email: {str(e)}")
