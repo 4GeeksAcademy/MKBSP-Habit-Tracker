@@ -13,9 +13,13 @@ from api.commands import setup_commands
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 from api.models import UserHabit, HabitCompletion
+from flask import current_app #? 
 
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+
+from dotenv import load_dotenv
+load_dotenv()
 
 
 
@@ -49,6 +53,8 @@ else:
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 MIGRATE = Migrate(app, db, compare_type=True)
 db.init_app(app)
+
+app.config['FRONTEND_URL'] = os.environ.get('FRONTEND_URL', 'https://effective-meme-g5455q947rf9jwr-3000.app.github.dev')
 
 # add the admin
 setup_admin(app)

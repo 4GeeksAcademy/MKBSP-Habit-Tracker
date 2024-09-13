@@ -13,6 +13,8 @@ import smtplib
 import requests
 from email.mime.text import MIMEText
 from api.utils import APIException
+import os
+
 
 
 
@@ -117,23 +119,7 @@ def update_user(user_id):
     
     return jsonify({"message": "User updated successfully"}), 200
 
-def send_password_reset_email(email, reset_token):
-    frontend_url = "https://effective-meme-g5455q947rf9jwr-3000.app.github.dev"  # Update this with your actual frontend URL
-    reset_link = f"{frontend_url}/reset-password/{reset_token}"
-    
-    msg = MIMEText(f"Please click the following link to reset your password: {reset_link}")
-    msg['Subject'] = "Password Reset"
-    msg['From'] = "mailgun@sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org"
-    msg['To'] = email
 
-    try:
-        with smtplib.SMTP('smtp.mailgun.org', 587) as s:
-            s.starttls()
-            s.login('postmaster@sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org', '***REMOVED***')
-            s.send_message(msg)
-        print(f"Password reset email sent to {email}")
-    except Exception as e:
-        print(f"Failed to send password reset email: {str(e)}")
 
 #Login Route
 @api.route('/login', methods=['POST'])
@@ -539,7 +525,7 @@ def add_header(response):
 #        text=message.as_string()
 #    )
 
-
+#when the 
 @api.route('/request_password_reset', methods=['POST'])
 def request_password_reset():
     email = request.json.get('email', None)
@@ -550,73 +536,74 @@ def request_password_reset():
     if not user:
         return jsonify({"msg": "If a user with this email exists, a reset link has been sent."}), 200
 
-    # Generate a unique password reset token
     reset_token = str(uuid.uuid4())
-
-    # Save the reset token and expiration time in the user model
     user.password_reset_token = reset_token
     user.password_reset_expires = datetime.utcnow() + timedelta(minutes=15)
     db.session.commit()
 
-    # Send a password reset email to the user
-    send_password_reset_email(user.email, reset_token)
-
-    return jsonify({"msg": "If a user with this email exists, a reset link has been sent."}), 200
-
-
-
-@api.route('/reset_password', methods=['POST'])
-def reset_password():
-    email = request.json.get('email', None)
-    if not email:
-        return jsonify({"msg": "Email is required"}), 400
-
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({"msg": "No user found with that email"}), 404
-
-    # Generate a unique password reset token
-    reset_token = str(uuid.uuid4())
-
-    # Save the reset token and expiration time in the user model
-    user.password_reset_token = reset_token
-    user.password_reset_expires = datetime.utcnow() + timedelta(minutes=15)
-    db.session.commit()
-
-    # Send a password reset email to the user
-    send_password_reset_email(user.email, reset_token)
-
-    return jsonify({"msg": "Password reset instructions have been sent to your email"}), 200
+    response = send_password_reset_email(user.email, reset_token)
+    
+    if response and response.status_code == 200:
+        return jsonify({"msg": "If a user with this email exists, a reset link has been sent."}), 200
+    else:
+        print(f"Failed to send email: {response.text if response else 'No response'}")
+        return jsonify({"msg": "Failed to send reset email. Please try again later."}), 500
+    
 
 @api.route('/reset_password/<token>', methods=['POST'])
 def confirm_password_reset(token):
-    new_password = request.json.get('new_password', None)
-    if not new_password:
-        return jsonify({"msg": "New password is required"}), 400
+   new_password = request.json.get('new_password', None)
+   if not new_password:
+       return jsonify({"msg": "New password is required"}), 400
 
-    user = User.query.filter_by(password_reset_token=token).first()
-    if not user or user.password_reset_expires < datetime.utcnow():
-        return jsonify({"msg": "Invalid or expired password reset token"}), 400
+   user = User.query.filter_by(password_reset_token=token).first()
+   if not user or user.password_reset_expires < datetime.utcnow():
+       return jsonify({"msg": "Invalid or expired password reset token"}), 400
 
-    user.set_password(new_password)
-    user.password_reset_token = None
-    user.password_reset_expires = None
-    db.session.commit()
+   user.set_password(new_password)
+   user.password_reset_token = None
+   user.password_reset_expires = None
+   db.session.commit()
 
-    return jsonify({"msg": "Password updated successfully"}), 200
-
+   return jsonify({"msg": "Password updated successfully"}), 200
 
 def send_password_reset_email(email, reset_token):
-    msg = MIMEText(f"Please click the following link to reset your password: https://effective-meme-g5455q947rf9jwr-3000.app.github.dev/reset_password/{reset_token}")
-    msg['Subject'] = "Password Reset"
-    msg['From'] = "mailgun@sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org"
-    msg['To'] = email
+    mailgun_domain = os.environ.get('MAILGUN_DOMAIN')
+    mailgun_api_key = os.environ.get('MAILGUN_API_KEY')
+    
+    if not mailgun_domain or not mailgun_api_key:
+        print("Mailgun configuration is missing")
+        return None
+    
+    reset_url = f"{current_app.config['FRONTEND_URL']}/reset-password/{reset_token}"
+    
+    return requests.post(
+        f"https://api.mailgun.net/v3/{mailgun_domain}/messages",
+        auth=("api", mailgun_api_key),
+        data={"from": f"Password Reset <mailgun@{mailgun_domain}>",
+              "to": [email],
+              "subject": "Password Reset Request",
+              "text": f"Please click the following link to reset your password: {reset_url}"})
 
-    try:
-        with smtplib.SMTP('smtp.mailgun.org', 587) as s:
-            s.starttls()
-            s.login('postmaster@sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org', '***REMOVED***')
-            s.send_message(msg)
-        print(f"Password reset email sent to {email}")
-    except Exception as e:
-        print(f"Failed to send password reset email: {str(e)}")
+
+@api.route('/test_mailgun', methods=['GET'])
+def test_mailgun():
+    mailgun_domain = os.environ.get('MAILGUN_DOMAIN')
+    mailgun_api_key = os.environ.get('MAILGUN_API_KEY')
+    recipient_email = "madstrundte@gmail.com"
+
+    if not mailgun_domain or not mailgun_api_key:
+        return jsonify({"error": "Mailgun configuration is missing"}), 500
+
+    response = requests.post(
+        f"https://api.mailgun.net/v3/{mailgun_domain}/messages",
+        auth=("api", mailgun_api_key),
+        data={"from": f"Mailgun Test <mailgun@{mailgun_domain}>",
+              "to": [recipient_email],
+              "subject": "Hello from Flask",
+              "text": "This is a test email sent from Flask using Mailgun!"})
+
+    if response.status_code == 200:
+        return jsonify({"message": "Test email sent successfully!"}), 200
+    else:
+        return jsonify({"error": f"Failed to send email. Status code: {response.status_code}", "details": response.text}), 500
