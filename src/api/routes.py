@@ -607,3 +607,53 @@ def test_mailgun():
         return jsonify({"message": "Test email sent successfully!"}), 200
     else:
         return jsonify({"error": f"Failed to send email. Status code: {response.status_code}", "details": response.text}), 500
+
+
+#this is what me and David came up with:
+#basically, we are calling a previous route to get all the userHabits, which we are then organising their performance. 
+@api.route('/performanceByUser/<uuid:user_id>', methods=['GET'])
+def get_user_habit_performance(user_id):
+    # Get all UserHabits for the user
+    user_habits = UserHabit.query.filter_by(user_id=user_id).all()
+    
+    if not user_habits:
+        return jsonify({"message": "No habits found for this user"}), 404
+    
+    # Calculate date range
+    end_date = datetime.now().date()
+    start_date = end_date - timedelta(days=14)  # 15 days including today
+    
+    # Prepare the result
+    result = []
+    
+    for user_habit in user_habits:
+        habit = Habit.query.get(user_habit.habit_id)
+        habit_data = {
+            "user_habit_id": user_habit.uid,
+            "habit_id": habit.uid,
+            "habit_name": habit.title,
+            "performance": []
+        }
+        
+        # Get completions for this UserHabit in the date range
+        completions = HabitCompletion.query.filter(
+            HabitCompletion.userhabit_id == user_habit.uid,
+            HabitCompletion.date >= start_date,
+            HabitCompletion.date <= end_date
+        ).all()
+        
+        # Create a set of completed dates for easy lookup
+        completed_dates = {c.date for c in completions}
+        
+        # Populate performance data
+        current_date = start_date
+        while current_date <= end_date:
+            habit_data["performance"].append({
+                "date": current_date.isoformat(),
+                "completed": current_date in completed_dates
+            })
+            current_date += timedelta(days=1)
+        
+        result.append(habit_data)
+    
+    return jsonify(result), 200

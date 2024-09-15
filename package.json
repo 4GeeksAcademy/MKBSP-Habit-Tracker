@@ -79,6 +79,7 @@
 		"@mui/icons-material": "^5.16.7",
 		"@mui/lab": "^5.0.0-alpha.173",
 		"@mui/material": "^5.16.7",
+		"@mui/x-charts": "^7.17.0",
 		"@mui/x-date-pickers": "^7.15.0",
 		"date-fns": "^2.30.0",
 		"jwt-decode": "^4.0.0",

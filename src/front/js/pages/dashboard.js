@@ -7,10 +7,13 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { jwtDecode } from 'jwt-decode';
 import Level from '../component/levels';
-import Quotes from '../component/dailyQuote'; 
+import Quotes from '../component/dailyQuote';
+import HabitPerformanceChart from '/workspaces/MKBSP-Habit-Tracker/src/front/js/component/habitPerformanceGraph.js';
+
 
 const Dashboard = () => {
     const [user, setUser] = useState(null);
+    const [userId, setUserId] = useState(null);
     const [habits, setHabits] = useState([]);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [level, setLevel] = useState(1);
@@ -23,14 +26,14 @@ const Dashboard = () => {
                 console.error('No access token found');
                 return;
             }
-            const userId = jwtDecode(token).sub;
+            const decodedToken = jwtDecode(token);
+            setUserId(decodedToken.sub);
             try {
-                const response = await fetch(`https://effective-meme-g5455q947rf9jwr-3001.app.github.dev/api/getUser/${userId}`, {
+                const response = await fetch(`https://effective-meme-g5455q947rf9jwr-3001.app.github.dev/api/getUser/${decodedToken.sub}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-                console.log({userId})
                 if (response.ok) {
                     const userData = await response.json();
                     setUser(userData);
@@ -48,12 +51,8 @@ const Dashboard = () => {
     useEffect(() => {
         // Fetch habits for the current level
         const fetchHabits = async () => {
+            if (!userId) return;
             const token = localStorage.getItem('access_token');
-            if (!token) {
-                console.error('No access token found');
-                return;
-            }
-            const userId = jwtDecode(token).sub;
             try {
                 const response = await fetch(`https://effective-meme-g5455q947rf9jwr-3001.app.github.dev/api/getUserHabits/${userId}/${level}`, {
                     headers: {
@@ -71,10 +70,8 @@ const Dashboard = () => {
             }
         };
 
-        if (user) {
-            fetchHabits();
-        }
-    }, [user, level]);
+        fetchHabits();
+    }, [userId, level]);
 
     const handleDateChange = (newDate) => {
         setSelectedDate(newDate);
@@ -91,7 +88,7 @@ const Dashboard = () => {
                     <Typography variant="h4">Welcome, {user ? user.username : 'User'}</Typography>
                 </Grid>
                 <Grid item xs={12}>
-                    <Quotes />  
+                    <Quotes />
                 </Grid>
                 <Grid item xs={12}>
                     <DatePicker
@@ -109,6 +106,11 @@ const Dashboard = () => {
                         onLevelChange={handleLevelChange}
                     />
                 </Grid>
+                {userId && (
+                    <Grid item xs={12}>
+                        <HabitPerformanceChart userId={userId} />
+                    </Grid>
+                )}
             </Grid>
         </LocalizationProvider>
     );
