@@ -470,61 +470,6 @@ def add_header(response):
     return response
 
 
-#@api.route('/reset_password', methods=['POST'])
-#def reset_password():
-#    email = request.json.get('email', None)
-#    if not email:
-#        return jsonify({"msg": "Email is required"}), 400
-#
-#    user = User.query.filter_by(email=email).first()
-#    if not user:
-#        return jsonify({"msg": "No user found with that email"}), 404
-#
-#    # Generate a unique password reset token
-#    reset_token = str(uuid.uuid4())
-#
-#    # Save the reset token and expiration time in the user model
-#    user.password_reset_token = reset_token
-#    user.password_reset_expires = datetime.utcnow() + timedelta(minutes=15)
-#    db.session.commit()
-#
-#    # Send a password reset email to the user
-#    send_password_reset_email(user.email, reset_token)
-#
-#    return jsonify({"msg": "Password reset instructions have been sent to your email"}), 200
-
-#@api.route('/reset_password/<token>', methods=['POST'])
-#def update_password(token):
-#    new_password = request.json.get('new_password', None)
-#    if not new_password:
-#        return jsonify({"msg": "New password is required"}), 400
-#
-#    user = User.query.filter_by(password_reset_token=token).first()
-#    if not user or user.password_reset_expires < datetime.utcnow():
-#        return jsonify({"msg": "Invalid or expired password reset token"}), 400
-#
-#    user.set_password(new_password)
-#    user.password_reset_token = None
-#    user.password_reset_expires = None
-#    db.session.commit()
-#
-#    return jsonify({"msg": "Password updated successfully"}), 200
-
-#def send_password_reset_email(email, reset_token):
-#    mailgun_client = MailgunClient(api_key='***REMOVED***', domain='sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org')
-#
-#    message = MIMEText(f"Please click the following link to reset your password: https://effective-meme-g5455q947rf9jwr-3000.app.github.dev/reset_password/{reset_token}")
-#    message['Subject'] = "Password Reset"
-#    message['From'] = "no-reply@sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org"
-#    message['To'] = email
-#
-#    mailgun_client.send_email(
-#        sender="no-reply@sandbox802efbadb096463f8a325ac37dc6860c.mailgun.org",
-#        recipient=email,
-#        subject="Password Reset",
-#        text=message.as_string()
-#    )
-
 #when the 
 @api.route('/request_password_reset', methods=['POST'])
 def request_password_reset():
