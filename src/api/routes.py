@@ -561,6 +561,7 @@ def get_user_habit_performance(user_id):
     # Get all UserHabits for the user
     user_habits = UserHabit.query.filter_by(user_id=user_id).all()
     
+
     if not user_habits:
         return jsonify({"message": "No habits found for this user"}), 404
     

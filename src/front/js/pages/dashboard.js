@@ -8,7 +8,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { jwtDecode } from 'jwt-decode';
 import Level from '../component/levels';
 import Quotes from '../component/dailyQuote';
-import HabitPerformanceChart from '/workspaces/MKBSP-Habit-Tracker/src/front/js/component/habitPerformanceGraph.js';
+import HabitPerformanceChart from '../component/habitPerformanceGraph.js';
 
 
 const Dashboard = () => {
